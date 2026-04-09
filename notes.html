@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NotesCorner</title>
+  <style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #001F3F;
+        color: #FFF5CC;
+        line-height: 1.6;
+    }
+    .container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: #002B5B;
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(255, 236, 179, 0.1);
+        padding: 32px 24px;
+        border: 1px solid #FFECB3;
+    }
+    h2 { text-align: center; color: #FFECB3; text-transform: uppercase; letter-spacing: 2px; }
+    form { margin-bottom: 32px; }
+    label { color: #FFECB3; font-weight: bold; display: block; margin-top: 10px; }
+    input, textarea, select {
+        width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px;
+        background: #001833; color: #FFECB3; border: 1px solid #FFECB3; box-sizing: border-box;
+    }
+    button {
+        width: 100%; padding: 14px; margin: 10px 0; border-radius: 8px;
+        background: #FFECB3; color: #001F3F; font-weight: bold; border: none;
+        cursor: pointer; text-transform: uppercase; transition: 0.2s;
+    }
+    button:hover { background: #FFF5CC; transform: scale(1.01); }
+    #notesStatus { text-align: center; font-size: 0.95rem; font-weight: bold; margin-top: 10px; min-height: 24px; }
+    .notes-year { font-size: 1.5em; color: #FFECB3; margin-top: 30px; border-bottom: 2px solid #FFECB3; display: inline-block; }
+    .notes-sem { font-size: 1.1em; color: #FFF5CC; margin: 15px 0 10px 0; font-weight: 600; }
+    .note-card {
+        background: #001833; border-radius: 10px; padding: 18px; margin-bottom: 15px;
+        display: flex; flex-direction: column; gap: 6px; border-left: 4px solid #FFECB3;
+    }
+    .note-title { font-weight: bold; color: #FFECB3; }
+    .note-link { color: #FFECB3; text-decoration: none; font-weight: bold; margin-top: 5px; }
+    .note-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Notes Corner</h2>
+    <div id="notesStatus"></div>
+    <form id="notesForm">
+      <input type="text" name="title" placeholder="Title" required>
+      <textarea name="description" placeholder="Description" required></textarea>
+      <input type="file" id="fileInput" required>
+      <input type="text" name="uploadedBy" placeholder="Uploaded By" required>
+      <input type="text" name="subject" placeholder="Subject" required>
+      <label for="typeSelect">Type</label>
+      <select id="typeSelect" name="type" required>
+        <option value="">Select Type</option>
+        <option value="note">Note</option>
+        <option value="pdf">PDF</option>
+        <option value="video">Video</option>
+        <option value="pyq">PYQ</option>
+      </select>
+      <label for="yearSelect">Year</label>
+      <select id="yearSelect" name="year" required>
+        <option value="">Select Year</option>
+        <option value="1st Year">1st Year</option>
+        <option value="2nd Year">2nd Year</option>
+        <option value="3rd Year">3rd Year</option>
+        <option value="4th Year">4th Year</option>
+      </select>
+      <label for="semesterSelect">Semester</label>
+      <select id="semesterSelect" name="semester" required>
+        <option value="">Select Semester</option>
+        <option value="1st Sem">1st Sem</option>
+        <option value="2nd Sem">2nd Sem</option>
+      </select>
+      <button type="submit">Upload & Save</button>
+    </form>
+</form> 
+    <h3 style="color: #FFECB3; border-bottom: 1px solid #FFECB3; padding-bottom: 10px;">Notes</h3>
+    <div class="notes-list" id="notesList"></div>
+  </div> 
+<script>
+    const notesForm = document.getElementById("notesForm");
+    const notesStatus = document.getElementById("notesStatus");
+    const toBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+async function loadNotes() {
+    const notesList = document.getElementById("notesList");
+    if (!notesList) return;
+try {
+        const response = await fetch("http://localhost:3001/api/notescorner");
+        const notes = await response.json();
+        renderNotes(notes);
+    } catch (err) {
+        console.error("Error loading notes:", err);
+    }
+}
+function renderNotes(notes) {
+    const notesList = document.getElementById("notesList");
+    notesList.innerHTML = "";
+    if (notes.length === 0) {
+        notesList.innerHTML = "<p style='text-align:center;'>No notes uploaded yet.</p>";
+        return;
+    }
+    notes.forEach(note => {
+        const noteCard = `
+            <div class="note-card">
+                <div class="note-title">${note.title}</div>
+                <div><strong>Subject:</strong> ${note.subject} | <strong>By:</strong> ${note.uploadedBy}</div>
+                <div style="font-size: 0.9em; margin-top: 5px;">${note.description}</div>
+                <a href="${note.fileUrl}" download="${note.title}.pdf" class="note-link">Download PDF</a>
+            </div>
+        `;
+        notesList.insertAdjacentHTML('beforeend', noteCard);
+    });
+}
+window.onload = loadNotes;
+notesForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        notesStatus.textContent = "Uploading notes... Please wait.";
+        notesStatus.style.color = "#FFECB3";
+        try {
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                notesStatus.textContent = "Please select a file first!";
+                return;
+            }
+            const base64File = await toBase64(file);
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            data.fileUrl = base64File; 
+            const response = await fetch("http://localhost:3001/api/notescorner", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+             if (response.ok) {
+                notesStatus.style.color = "#2ecc71";
+                notesStatus.textContent = "Note uploaded successfully!";
+                this.reset();
+                if (typeof loadNotes === "function") loadNotes(); 
+            } else {
+                notesStatus.textContent = "Server rejected the upload.";
+            }
+         } catch (err) {
+            notesStatus.style.color = "#ff4d4d";
+            notesStatus.textContent = "Upload failed. Is server.js running?";
+        }
+    });
+</script>
+</body>
+</html>

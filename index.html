@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Campus Buddy</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<header>
+    <h1 style="text-align: center;">Smart Campus Buddy</h1>
+    <p style="text-align: center;">The all-in-one digital assistant for the modern student.</p>
+  </header>
+<main>
+    <div class="card" onclick="location.href='rooms.html'">RoomRadar</div>
+    <div class="card" onclick="location.href='aqua.html'">AquaPulse</div>
+    <div class="card" onclick="location.href='notes.html'">NotesCorner</div>
+    <div class="card" onclick="location.href='feedback.html'">Feedback</div>
+</main>
+<div id="timetableDisplay" class="section-card">
+    <h3>Timetable</h3>
+    <div class="table-container">
+        <table id="ttTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time Slot</th>
+                    <th>Subject</th>
+                    <th>Year/Sem</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="ttBody"></tbody>
+        </table>
+    </div>
+</div>
+<div id="eventDisplay" class="section-card">
+    <h3>Events</h3>
+    <div class="table-container">
+      <table id="eventTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time Slot</th>
+            <th>Event</th>
+            <th>Details</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="eventBody">
+          </tbody>
+      </table>
+    </div>
+  </div> 
+  <div id="complaintList" class="section-card">
+  <h3>Complaints</h3>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Location</th>
+          <th>Issue</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="complaintBody">
+        </tbody>
+    </table>
+  </div>
+</div>
+<section id="admin-timetable" class="section-card">
+    <h2>Update Timetable</h2>
+    <form id="timetableForm">
+        <input type="text" id="ttYear" name="year" placeholder="Year (e.g., 2nd Year)" required />
+        <input type="text" id="ttSem" name="semester" placeholder="Semester (e.g., Sem 2)" required />
+        <input type="date" id="ttDate" name="date" required />
+        <input type="text" id="ttSlot" name="slot" placeholder="Time Slot (e.g., 9:00 - 10:00)" required />
+        <input type="text" id="ttSubject" name="subject" placeholder="Subject (e.g., DBMS)" required />
+        <button type="submit">Add to Timetable</button>
+    </form>
+</section>
+<section id="admin-events" class="section-card">
+    <h2>Add Events</h2>
+    <form id="eventForm">
+      <input type="date" id="eventDate" name="eventDate" required />
+      <input type="text" id="eventTitle" name="eventTitle" placeholder="Event Title" required />
+      <textarea id="eventDetails" name="eventDetails" placeholder="Event Details" required></textarea>
+      <button type="submit">Add Event</button>
+    </form>
+  </section>
+  <section id="complaint-box" class="section-card">
+  <h2>Complaint Box</h2>
+  <form id="complaintForm">
+    <input type="text" id="complaintName" placeholder="Your Name (optional)" name="name" />
+    <input type="text" id="complaintLocation" placeholder="Location (Room/Block)" required name="location" />
+    <textarea id="complaintIssue" placeholder="Describe the issue" required name="issue"></textarea>
+    <button type="submit">Submit Complaint</button>
+  </form>
+</section>
+<footer style="text-align: center;">&copy; 2026, Smart Campus Buddy | All rights reserved. <br>Designed by SCB Team. </footer>
+<script src="script.js"></script>
+</body>
+</html>

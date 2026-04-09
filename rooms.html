@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoomRadar</title>
+  <style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #001F3F;
+        color: #FFF5CC;
+        line-height: 1.6;
+    }
+    .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #002B5B;
+        border-radius: 16px;
+        padding: 32px 24px;
+        border: 1px solid #FFECB3;
+        box-shadow: 0 4px 30px rgba(255, 236, 179, 0.1);
+    }
+    h2 { text-align: center; color: #FFECB3; text-transform: uppercase; }
+    form {
+        background: rgba(0, 24, 51, 0.8);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #FFECB3;
+        margin-bottom: 30px;
+    }
+    input, select {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 8px;
+        background: rgba(0, 31, 63, 0.8);
+        color: #FFECB3;
+        border: 1px solid #FFECB3;
+        box-sizing: border-box;
+    }
+    select option { background: #001F3F; color: #FFECB3; }
+    button {
+        width: 100%;
+        padding: 14px;
+        background: #FFECB3;
+        color: #001F3F;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: 0.3s;
+    }
+    button:hover { background: #FFF5CC; transform: scale(1.01); }
+    .status-msg { text-align: center; font-weight: bold; height: 24px; margin-bottom: 10px; color: #2ecc71; }
+    .room-card {
+        background: rgba(0, 24, 51, 0.85);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border-left: 5px solid #FFECB3;
+    }
+    .vacant { color: #2ecc71; font-weight: bold; }
+    .occupied { color: #ff4d4d; font-weight: bold; }
+    .room-meta { font-size: 0.85rem; opacity: 0.7; }
+    h3 { color: #FFECB3; border-bottom: 1px solid rgba(255, 236, 179, 0.3); padding-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Room Status</h2>
+    <div id="roomStatus" class="status-msg"></div>
+    <form id="roomForm">
+      <input type="text" id="roomNumber" name="roomNumber" placeholder="Room Number" required>
+      <input type="text" id="facultyIncharge" name="facultyIncharge" placeholder="Faculty In-charge" required>
+      <select id="status" name="status" required>
+        <option value="">Select Status</option>
+        <option value="vacant">Vacant</option>
+        <option value="occupied">Occupied</option>
+      </select>
+      <button type="submit">Update Status</button>
+    </form>
+   <div id="roomsList">
+      <h3>Live Room Status</h3>
+      <div id="displayArea"></div>
+    </div>
+  </div>
+<script>
+    const roomForm = document.getElementById("roomForm");
+    const statusMsg = document.getElementById("roomStatus");
+    const displayArea = document.getElementById("displayArea");
+    function updateDisplay() {
+      const rooms = JSON.parse(localStorage.getItem("roomData")) || [];
+      displayArea.innerHTML = "";
+      if (rooms.length === 0) {
+        displayArea.innerHTML = "<p style='opacity:0.5; text-align:center;'>No rooms registered yet.</p>";
+        return;
+      }
+      rooms.reverse().forEach(room => {
+        const card = document.createElement("div");
+        card.className = "room-card";
+        card.innerHTML = `
+          <div><strong>Room ${room.number}</strong> - <span class="${room.status.toLowerCase()}">${room.status.toUpperCase()}</span></div>
+          <div class="room-meta">In-charge: ${room.faculty}</div>
+          <div class="room-meta" style="font-size: 0.7rem">Updated: ${room.time}</div>
+        `;
+        displayArea.appendChild(card);
+      });
+    }
+    roomForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const roomNumber = document.getElementById("roomNumber").value;
+      const faculty = document.getElementById("facultyIncharge").value;
+      const status = document.getElementById("status").value;
+      const timestamp = new Date().toLocaleString();
+      const newEntry = {
+        number: roomNumber,
+        faculty: faculty,
+        status: status,
+        time: timestamp
+      };
+      let rooms = JSON.parse(localStorage.getItem("roomData")) || [];
+      const existingIndex = rooms.findIndex(r => r.number === roomNumber);
+      if (existingIndex !== -1) {
+        rooms[existingIndex] = newEntry;
+      } else {
+        rooms.push(newEntry);
+      }
+      localStorage.setItem("roomData", JSON.stringify(rooms));
+      statusMsg.textContent = "Status Updated!";
+      this.reset();
+      updateDisplay();
+      setTimeout(() => { statusMsg.textContent = ""; }, 3000);
+    });
+    updateDisplay();
+  </script>
+</body>
+</html>

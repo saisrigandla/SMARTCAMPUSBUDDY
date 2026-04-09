@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AquaPulse</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+        margin: 0;
+        font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+        background-color: #001F3F; 
+        color: #FFF5CC;           
+        line-height: 1.6;
+    }
+    header { padding: 40px 20px; text-align: center; }
+    h1 { font-size: 2.5rem; margin-bottom: 10px; color: #FFECB3; }
+    .container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: #002B5B;
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(255, 236, 179, 0.1);
+        padding: 32px 24px;
+        border: 1px solid #FFECB3;
+    }
+    h2 {
+        text-align: center;
+        color: #FFECB3;
+        margin-bottom: 24px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    form {
+        margin-bottom: 32px;
+        background: #001833;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #FFECB3;
+    }
+    input, textarea {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 8px;
+        background: #001f3f;
+        color: #FFECB3;
+        border: 1px solid #FFECB3;
+        box-sizing: border-box;
+        font-size: 1rem;
+        outline: none;
+    }
+    input::placeholder, textarea::placeholder {
+        color: rgba(255, 236, 179, 0.5);
+    }
+    button {
+        width: 100%;
+        padding: 14px;
+        margin: 10px 0;
+        border-radius: 8px;
+        background: #FFECB3;
+        color: #001F3F;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    button:hover { background: #FFF5CC; transform: scale(1.02); }
+    #aquaStatus {
+        text-align: center;
+        font-size: 0.95rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2ecc71; 
+        min-height: 24px;
+    }
+    .issue-card {
+        background: #001833;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        border-left: 5px solid #FFECB3;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .issue-card strong { color: #FFECB3; font-size: 1.1rem; }
+    .issue-meta {
+        font-size: 0.85rem;
+        color: #FFF5CC;
+        opacity: 0.8;
+        border-top: 1px solid rgba(255, 236, 179, 0.1);
+        padding-top: 8px;
+        margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Water Issues</h2>
+    <div id="aquaStatus"></div>
+    <form id="aquaForm">
+      <input type="text" name="location" id="location" placeholder="Tank Location (e.g. Block C)" required>
+      <textarea name="issue" id="issue" placeholder="Describe the status or issue" required></textarea>
+      <input type="text" name="reportedBy" id="reportedBy" placeholder="Reported By" required>
+      <button type="submit">Update Status</button>
+    </form>
+    <div class="issues-list" id="issuesList">
+        </div>
+  </div>
+  <script>
+    const aquaForm = document.getElementById("aquaForm");
+    const aquaStatus = document.getElementById("aquaStatus");
+    const issuesList = document.getElementById("issuesList");
+    async function loadIssues() {
+      let issues = JSON.parse(localStorage.getItem("aquaPulseData")) || [];
+      renderIssues(issues);
+      try {
+        const res = await fetch("http://localhost:3001/api/aquapulse");
+        if (res.ok) {
+          const apiIssues = await res.json();
+          localStorage.setItem("aquaPulseData", JSON.stringify(apiIssues));
+          renderIssues(apiIssues);
+        }
+      } catch (e) {
+        console.log("Using locally stored status data.");
+      }
+    }
+    function renderIssues(issues) {
+      issuesList.innerHTML = "<h3 style='color:#FFECB3'>Stored Reports</h3>";
+      [...issues].reverse().forEach(item => {
+        const card = document.createElement("div");
+        card.className = "issue-card";
+        card.innerHTML = `
+          <div><strong>${item.location}</strong></div>
+          <div>${item.issue}</div>
+          <div class="issue-meta">
+            By: ${item.reportedBy} | ${new Date(item.createdAt).toLocaleString()}
+          </div>
+        `;
+        issuesList.appendChild(card);
+      });
+    }
+    aquaForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const newReport = {
+        location: document.getElementById("location").value,
+        issue: document.getElementById("issue").value,
+        reportedBy: document.getElementById("reportedBy").value,
+        createdAt: new Date().toISOString()
+      };
+      let storedIssues = JSON.parse(localStorage.getItem("aquaPulseData")) || [];
+      storedIssues.push(newReport);
+      localStorage.setItem("aquaPulseData", JSON.stringify(storedIssues));
+      renderIssues(storedIssues);
+      aquaStatus.textContent = "Status updated and stored!";
+      this.reset();
+      try {
+        await fetch("http://localhost:3001/api/aquapulse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newReport)
+        });
+      } catch (err) {
+        console.log("Offline mode: Data saved to browser only.");
+      }
+     setTimeout(() => { aquaStatus.textContent = ""; }, 3000);
+    });
+    loadIssues();
+  </script>
+</body>
+</html>

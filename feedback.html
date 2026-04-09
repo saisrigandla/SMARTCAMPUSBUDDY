@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback - RoomRadar</title>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #001F3F; color: #FFF5CC; line-height: 1.6; }
+    .container { max-width: 800px; margin: 40px auto; background: #002B5B; border-radius: 16px; padding: 32px 24px; border: 1px solid #FFECB3; }
+    h2 { text-align: center; color: #FFECB3; text-transform: uppercase; letter-spacing: 2px; }
+    form { margin-bottom: 32px; background: #001833; border-radius: 12px; padding: 20px; border: 1px solid #FFECB3; }
+    label { color: #FFECB3; font-weight: bold; display: block; margin-top: 10px; }
+    input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: #001f3f; color: #FFECB3; border: 1px solid #FFECB3; box-sizing: border-box; }
+    button { width: 100%; padding: 14px; background: #FFECB3; color: #001F3F; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; }
+    button:hover { background: #FFF5CC; transform: scale(1.02); }
+    #feedbackStatus { text-align: center; font-weight: bold; margin-bottom: 10px; color: #2ecc71; min-height: 24px; }
+    .feedback-card { background: #001833; border-radius: 10px; padding: 18px; margin-bottom: 15px; border-left: 5px solid #FFECB3; }
+    .feedback-rating { color: #FFECB3; font-size: 1.1rem; }
+    .feedback-meta { font-size: 0.85rem; opacity: 0.8; margin-top: 8px; border-top: 1px solid rgba(255, 236, 179, 0.1); padding-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Feedback</h2>
+    <div id="feedbackStatus"></div>
+    <form id="feedbackForm">
+      <input type="text" name="name" id="name" placeholder="Your Name (optional)" />
+      <label for="rating">Rating</label>
+      <select id="rating" name="rating" required>
+        <option value="">Select a rating</option>
+        <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+        <option value="4">⭐⭐⭐⭐ Good</option>
+        <option value="3">⭐⭐⭐ Average</option>
+        <option value="2">⭐⭐ Poor</option>
+        <option value="1">⭐ Very Poor</option>
+      </select>
+      <textarea name="comments" id="comments" placeholder="Your Comments" required></textarea>
+      <button type="submit">Submit Feedback</button>
+    </form>
+    <h3 style="color: #FFECB3; border-bottom: 1px solid #FFECB3; padding-bottom: 10px;">Previous Feedback</h3>
+    <div class="feedback-list" id="feedbackList"></div>
+  </div>
+<script>
+    const feedbackForm = document.getElementById("feedbackForm");
+    const feedbackStatus = document.getElementById("feedbackStatus");
+    const feedbackList = document.getElementById("feedbackList");
+    function loadFeedback() {
+      const storedFeedback = JSON.parse(localStorage.getItem("roomRadarFeedback")) || [];
+      renderFeedback(storedFeedback);
+      fetch("http://localhost:3001/api/feedback")
+        .then(res => res.json())
+        .then(data => {
+            localStorage.setItem("roomRadarFeedback", JSON.stringify(data));
+            renderFeedback(data);
+        })
+        .catch(() => console.log("Running in offline/local mode."));
+    }
+    function renderFeedback(feedbacks) {
+      feedbackList.innerHTML = "";
+      if (feedbacks.length === 0) {
+        feedbackList.innerHTML = "<p style='text-align:center; opacity:0.6;'>No feedback submitted yet.</p>";
+        return;
+      }
+      [...feedbacks].reverse().forEach(fb => {
+        const card = document.createElement("div");
+        card.className = "feedback-card";
+        const stars = "⭐".repeat(Number(fb.rating));
+        
+        card.innerHTML = `
+          <div><span class="feedback-rating">${stars}</span></div>
+          <div style="margin-top:5px;">${fb.comments}</div>
+          <div class="feedback-meta">By: ${fb.name || "Anonymous"} | ${new Date(fb.createdAt).toLocaleString()}</div>
+        `;
+        feedbackList.appendChild(card);
+      });
+    }
+    feedbackForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const newFeedback = {
+        name: document.getElementById("name").value || "Anonymous",
+        rating: document.getElementById("rating").value,
+        comments: document.getElementById("comments").value,
+        createdAt: new Date().toISOString()
+      };
+      let currentFeedback = JSON.parse(localStorage.getItem("roomRadarFeedback")) || [];
+      currentFeedback.push(newFeedback);
+      localStorage.setItem("roomRadarFeedback", JSON.stringify(currentFeedback));
+      renderFeedback(currentFeedback);
+      feedbackStatus.textContent = "Feedback submitted successfully!";
+      this.reset();
+      try {
+        await fetch("http://localhost:3001/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newFeedback)
+        });
+      } catch (err) {
+        console.log("Offline: Saved to local storage only.");
+      }
+      setTimeout(() => { feedbackStatus.textContent = ""; }, 3000);
+    });
+    loadFeedback();
+  </script>
+</body>
+</html>
